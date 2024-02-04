@@ -1,12 +1,15 @@
 <?php
 require 'db.php'; // Zakładamy, że ten plik zawiera połączenie z bazą danych sklep_internetowy
-session_start();
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
 
 function redirect($url) {
     header('Location: ' . $url);
     exit();
 }
 
+// Obsługa akcji dodania/aktualizacji produktu
 if(isset($_POST['action'])) {
     $action = $_POST['action'];
     $id = isset($_POST['id']) ? $_POST['id'] : null;
@@ -17,9 +20,10 @@ if(isset($_POST['action'])) {
     $image_path = isset($_POST['image_path']) ? $_POST['image_path'] : '';
 
     if($action == 'add' || $action == 'update') {
-        $stmt = $conn->prepare($action == 'add' ? 
+        $query = $action == 'add' ?
             "INSERT INTO products (name, description, price, available_quantity, image_path) VALUES (?, ?, ?, ?, ?)" :
-            "UPDATE products SET name = ?, description = ?, price = ?, available_quantity = ?, image_path = ? WHERE id = ?");
+            "UPDATE products SET name = ?, description = ?, price = ?, available_quantity = ?, image_path = ? WHERE id = ?";
+        $stmt = $conn->prepare($query);
         if($action == 'update') {
             $stmt->bind_param("ssdisi", $name, $description, $price, $available_quantity, $image_path, $id);
         } else {
@@ -28,25 +32,38 @@ if(isset($_POST['action'])) {
         $stmt->execute();
         $stmt->close();
         redirect('product.php');
-    } elseif($action == 'delete' && $id) {
-        $stmt = $conn->prepare("DELETE FROM products WHERE id = ?");
-        $stmt->bind_param("i", $id);
-        $stmt->execute();
-        $stmt->close();
-        redirect('product.php');
     }
 }
 
+// Dodanie obsługi żądania GET dla akcji usuwania
+if(isset($_GET['action']) && $_GET['action'] == 'delete' && isset($_GET['id'])) {
+    $id = $_GET['id'];
+    $stmt = $conn->prepare("DELETE FROM products WHERE id = ?");
+    $stmt->bind_param("i", $id);
+    if ($stmt->execute()) {
+        $stmt->close();
+        redirect('product.php');
+    } else {
+        echo "Błąd podczas usuwania produktu: " . $stmt->error;
+    }
+}
+
+// Obsługa edycji produktu
 if(isset($_GET['edit'])) {
     $id = $_GET['edit'];
     $stmt = $conn->prepare("SELECT * FROM products WHERE id = ?");
     $stmt->bind_param("i", $id);
     $stmt->execute();
     $result = $stmt->get_result();
-    $product = $result->fetch_assoc();
+    if ($product = $result->fetch_assoc()) {
+        // Produkt został pomyślnie załadowany dla edycji
+    } else {
+        echo "Nie znaleziono produktu.";
+    }
     $stmt->close();
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -69,24 +86,24 @@ if(isset($_GET['edit'])) {
         <input type="text" name="image_path" placeholder="Ścieżka do obrazka" value="<?php echo isset($product) ? $product['image_path'] : ''; ?>"><br>
         <input type="submit" value="<?php echo isset($product) ? 'Aktualizuj' : 'Dodaj'; ?> produkt">
     </form>
-    <a href="product.php">Powrót do listy produktów</a>
+    <a href="index.php" class="link">Powrót do sklepu</a>
     <h2>Lista produktów</h2>
-<div class="products-container">
-    <?php
-    $result = $conn->query("SELECT * FROM products");
-    while($row = $result->fetch_assoc()) {
-        echo "<div class='product-item'>";
-        if($row['image_path']) {
-            echo "<img src='{$row['image_path']}' alt='{$row['name']}'>";
+    <div class="products-container">
+        <?php
+        $result = $conn->query("SELECT * FROM products");
+        while($row = $result->fetch_assoc()) {
+            echo "<div class='product-item'>";
+            if($row['image_path']) {
+                echo "<img src='{$row['image_path']}' alt='{$row['name']}'>";
+            }
+            echo "<h3>{$row['name']}</h3>";
+            echo "<p>{$row['description']}</p>";
+            echo "<p>Cena: {$row['price']} zł</p>";
+            echo "<p>Dostępna ilość: {$row['available_quantity']}</p>";
+            echo "<a href='?edit={$row['id']}'>Edytuj</a> | <a href='product.php?action=delete&id={$row['id']}' onclick='return confirm(\"Czy na pewno chcesz usunąć ten produkt?\");'>Usuń</a>";
+            echo "</div>";
         }
-        echo "<h3>{$row['name']}</h3>";
-        echo "<p>{$row['description']}</p>";
-        echo "<p>Cena: {$row['price']} zł</p>";
-        echo "<p>Dostępna ilość: {$row['available_quantity']}</p>";
-        echo "<a href='?edit={$row['id']}'>Edytuj</a> | <a href='product.php?action=delete&id={$row['id']}' onclick='return confirm(\"Czy na pewno chcesz usunąć ten produkt?\");'>Usuń</a>";
-        echo "</div>";
-    }
-    ?>
-</div>
+        ?>
+    </div>
 </body>
 </html>

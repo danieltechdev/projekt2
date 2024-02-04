@@ -31,10 +31,6 @@ input[type="submit"]:hover {
     background-color: #45a049;
 }
 
-a {
-    text-decoration: none;
-    color: blue;
-}
 
 a:hover {
     text-decoration: underline;
@@ -51,7 +47,7 @@ img {
 }
 
 .product-item {
-    flex: 1 0 30%; /* Zajmuje do 30% przestrzeni, z minimum 0 i rośnie, aby wypełnić przestrzeń */
+    flex: 1 0 30%; 
     margin: 10px;
     border: 1px solid #ccc;
     box-shadow: 0 2px 4px rgba(0,0,0,.1);
@@ -64,4 +60,19 @@ img {
     height: auto;
     display: block;
     margin-bottom: 10px;
+}
+
+
+.link {
+    text-decoration: none;
+    background-color: #007bff;
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+}
+
+.link:hover {
+    background-color: #0056b3;
 }

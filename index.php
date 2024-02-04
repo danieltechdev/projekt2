@@ -66,9 +66,9 @@ $uniqueProductsInCart = count($_SESSION['cart']);
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <div class="cart-view">
-        <a href="cart.php">Przejdź do koszyka (<?php echo $uniqueProductsInCart; ?> różne produkty)</a>
-    </div>
+<div class="cart-view">
+    <a href="cart.php" class="link">Przejdź do koszyka (<?php echo $uniqueProductsInCart; ?> różne produkty)</a>
+</div>
     <h1>Produkty dostępne w naszym sklepie</h1>
     <div class="products-container">
         <?php
